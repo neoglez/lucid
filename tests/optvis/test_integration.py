@@ -42,9 +42,9 @@ def arbitrary_channels_to_rgb(*args, **kwargs):
         """Arbitrary parametrization for testing"""
         channels = kwargs.pop('channels', None) or 10
         full_im = param.image(*args, channels=channels, **kwargs)
-        r = tf.reduce_mean(full_im[...,:channels//3]**2, axis=-1)
-        g = tf.reduce_mean(full_im[...,channels//3:2*channels//3]**2, axis=-1)
-        b = tf.reduce_mean(full_im[...,2*channels//3:]**2, axis=-1)
+        r = tf.reduce_mean(input_tensor=full_im[...,:channels//3]**2, axis=-1)
+        g = tf.reduce_mean(input_tensor=full_im[...,channels//3:2*channels//3]**2, axis=-1)
+        b = tf.reduce_mean(input_tensor=full_im[...,2*channels//3:]**2, axis=-1)
         return tf.stack([r,g,b], axis=-1)
 
 @pytest.mark.slow

@@ -1,8 +1,6 @@
 # -*- coding: UTF-8 -*-
 from __future__ import absolute_import, division, print_function
 
-import pytest
-
 from lucid.misc.io.writing import write, write_handle
 from lucid.misc.io.scoping import io_scope
 import lucid.misc.io.scoping as scoping

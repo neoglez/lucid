@@ -69,4 +69,3 @@ def aggregate_tile(cells, ti, tj, aggregate, params, metadata, layout, summary):
     cell_json = aggregate(cells[key], params, metadata, layout, summary)
     tile.append({"aggregate":cell_json, "i":int(key[0]), "j":int(key[1])})
   return tile
- 

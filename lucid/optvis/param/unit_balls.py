@@ -14,7 +14,7 @@ from lucid.misc.gradient_override import use_gradient
 
 
 def dot(a, b):
-  return tf.reduce_sum(a * b)
+  return tf.reduce_sum(input_tensor=a * b)
 
 
 def _constrain_L2_grad(op, grad):
@@ -31,7 +31,7 @@ def _constrain_L2_grad(op, grad):
     (projected if necessary) gradient.
   """
   inp = op.inputs[0]
-  inp_norm = tf.norm(inp)
+  inp_norm = tf.norm(tensor=inp)
   unit_inp = inp / inp_norm
 
   grad_projection = dot(unit_inp, grad)
@@ -42,14 +42,14 @@ def _constrain_L2_grad(op, grad):
   allow_grad = tf.logical_or(is_in_ball, is_pointed_inward)
   clip_grad = tf.logical_not(allow_grad)
 
-  clipped_grad = tf.cond(clip_grad, lambda: grad - parallel_grad, lambda: grad)
+  clipped_grad = tf.cond(pred=clip_grad, true_fn=lambda: grad - parallel_grad, false_fn=lambda: grad)
 
   return clipped_grad
 
 
 @use_gradient(_constrain_L2_grad)
 def constrain_L2(x):
-  return x / tf.maximum(1.0, tf.norm(x))
+  return x / tf.maximum(1.0, tf.norm(tensor=x))
 
 
 def unit_ball_L2(shape):
@@ -85,7 +85,7 @@ def _constrain_L_inf_grad(precondition=True):
     if precondition:
       grad = tf.sign(grad)
 
-    return tf.where(
+    return tf.compat.v1.where(
         tf.logical_and(dim_at_edge, dim_outward),
         tf.zeros(grad.shape),
         grad

@@ -79,7 +79,7 @@ def fft_image(shape, sd=None, decay_power=1):
 
     # convert complex scaled spectrum to shape (h, w, ch) image tensor
     # needs to transpose because irfft2d returns channels first
-    image_t = tf.transpose(tf.signal.irfft2d(scaled_spectrum_t), (0, 2, 3, 1))
+    image_t = tf.transpose(a=tf.signal.irfft2d(scaled_spectrum_t), perm=(0, 2, 3, 1))
 
     # in case of odd spatial input dimensions we need to crop
     image_t = image_t[:batch, :h, :w, :ch]
@@ -122,14 +122,14 @@ def bilinearly_sampled_image(texture, uv):
     Returns:
       [frame_h, frame_h, channel_n] tensor with per-pixel sampled values.
     """
-    h, w = tf.unstack(tf.shape(texture)[:2])
+    h, w = tf.unstack(tf.shape(input=texture)[:2])
     u, v = tf.split(uv, 2, axis=-1)
     v = 1.0 - v  # vertical flip to match GL convention
-    u, v = u * tf.to_float(w) - 0.5, v * tf.to_float(h) - 0.5
-    u0, u1 = tf.floor(u), tf.ceil(u)
-    v0, v1 = tf.floor(v), tf.ceil(v)
+    u, v = u * tf.cast(w, dtype=tf.float32) - 0.5, v * tf.cast(h, dtype=tf.float32) - 0.5
+    u0, u1 = tf.floor(u), tf.math.ceil(u)
+    v0, v1 = tf.floor(v), tf.math.ceil(v)
     uf, vf = u - u0, v - v0
-    u0, u1, v0, v1 = map(tf.to_int32, [u0, u1, v0, v1])
+    u0, u1, v0, v1 = map(tf.compat.v1.to_int32, [u0, u1, v0, v1])
 
     def sample(u, v):
         vu = tf.concat([v % h, u % w], axis=-1)

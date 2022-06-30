@@ -13,18 +13,18 @@ def maxpool_override():
             op.get_attr("strides"),
             op.get_attr("padding"),
         ]
-        smooth_out = tf.nn.avg_pool(inp ** 2, *op_args) / (
-            1e-2 + tf.nn.avg_pool(tf.abs(inp), *op_args)
+        smooth_out = tf.nn.avg_pool2d(input=inp ** 2) / (
+            1e-2 + tf.nn.avg_pool2d(input=tf.abs(inp))
         )
-        inp_smooth_grad = tf.gradients(smooth_out, [inp], grad)[0]
+        inp_smooth_grad = tf.gradients(ys=smooth_out, xs=[inp], grad_ys=grad)[0]
         return inp_smooth_grad
 
     return {"MaxPool": MaxPoolGrad}
 
 
 def get_acts(model, layer_name, obses):
-    with tf.Graph().as_default(), tf.Session():
-        t_obses = tf.placeholder_with_default(
+    with tf.Graph().as_default(), tf.compat.v1.Session():
+        t_obses = tf.compat.v1.placeholder_with_default(
             obses.astype(np.float32), (None, None, None, None)
         )
         T = render.import_model(model, t_obses, t_obses)
@@ -33,7 +33,7 @@ def get_acts(model, layer_name, obses):
 
 
 def default_score_fn(t):
-    return tf.reduce_sum(t, axis=list(range(len(t.shape)))[1:])
+    return tf.reduce_sum(input_tensor=t, axis=list(range(len(t.shape)))[1:])
 
 
 def get_grad_or_attr(
@@ -49,8 +49,8 @@ def get_grad_or_attr(
     override=None,
     integrate_steps=1
 ):
-    with tf.Graph().as_default(), tf.Session(), gradient_override_map(override or {}):
-        t_obses = tf.placeholder_with_default(
+    with tf.Graph().as_default(), tf.compat.v1.Session(), gradient_override_map(override or {}):
+        t_obses = tf.compat.v1.placeholder_with_default(
             obses.astype(np.float32), (None, None, None, None)
         )
         T = render.import_model(model, t_obses, t_obses)
@@ -68,8 +68,8 @@ def get_grad_or_attr(
             )
         t_scores = score_fn(t_acts)
         assert len(t_scores.shape) >= 1, "score_fn should not reduce the batch dim"
-        t_score = tf.reduce_sum(t_scores)
-        t_grad = tf.gradients(t_score, [t_acts_prev])[0]
+        t_score = tf.reduce_sum(input_tensor=t_scores)
+        t_grad = tf.gradients(ys=t_score, xs=[t_acts_prev])[0]
         if integrate_steps > 1:
             acts_prev = t_acts_prev.eval()
             grad = (
@@ -157,8 +157,8 @@ def get_multi_path_attr(
     max_paths=50,
     integrate_steps=10
 ):
-    with tf.Graph().as_default(), tf.Session(), gradient_override_map(override or {}):
-        t_obses = tf.placeholder_with_default(
+    with tf.Graph().as_default(), tf.compat.v1.Session(), gradient_override_map(override or {}):
+        t_obses = tf.compat.v1.placeholder_with_default(
             obses.astype(np.float32), (None, None, None, None)
         )
         T = render.import_model(model, t_obses, t_obses)
@@ -176,8 +176,8 @@ def get_multi_path_attr(
             )
         t_scores = score_fn(t_acts)
         assert len(t_scores.shape) >= 1, "score_fn should not reduce the batch dim"
-        t_score = tf.reduce_sum(t_scores)
-        t_grad = tf.gradients(t_score, [t_acts_prev])[0]
+        t_score = tf.reduce_sum(input_tensor=t_scores)
+        t_grad = tf.gradients(ys=t_score, xs=[t_acts_prev])[0]
         acts_prev = t_acts_prev.eval()
         path_acts = get_paths(
             acts_prev, prev_nmf, max_paths=max_paths, integrate_steps=integrate_steps

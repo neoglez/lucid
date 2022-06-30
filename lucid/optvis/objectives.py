@@ -166,7 +166,7 @@ def neuron(layer_name, channel_n, x=None, y=None, batch=None):
   def inner(T):
     layer = T(layer_name)
     layer = _extract_act_pos(layer, x, y)
-    return tf.reduce_mean(layer[..., channel_n])
+    return tf.reduce_mean(input_tensor=layer[..., channel_n])
   return inner
 
 
@@ -176,7 +176,7 @@ def channel(layer, n_channel, batch=None):
 
   @handle_batch(batch)
   def inner(T):
-    return tf.reduce_mean(T(layer)[..., n_channel])
+    return tf.reduce_mean(input_tensor=T(layer)[..., n_channel])
   return inner
 
 
@@ -215,7 +215,7 @@ def tensor_direction(layer, vec, cossim_pow=0, batch=None):
   @handle_batch(batch)
   def inner(T):
     t_acts = T(layer)
-    t_shp = tf.shape(t_acts)
+    t_shp = tf.shape(input=t_acts)
     v_shp = vec.shape
     M1 = (t_shp[1] - v_shp[1]) // 2
     M2 = (t_shp[2] - v_shp[2]) // 2
@@ -233,7 +233,7 @@ def deepdream(layer):
 
   See Mordvintsev et al., 2015.
   """
-  return lambda T: tf.reduce_mean(T(layer)**2)
+  return lambda T: tf.reduce_mean(input_tensor=T(layer)**2)
 
 
 @wrap_objective(handle_batch=True)
@@ -249,13 +249,13 @@ def total_variation(layer="input"):
 @wrap_objective(handle_batch=True)
 def L1(layer="input", constant=0):
   """L1 norm of layer. Generally used as penalty."""
-  return lambda T: tf.reduce_sum(tf.abs(T(layer) - constant))
+  return lambda T: tf.reduce_sum(input_tensor=tf.abs(T(layer) - constant))
 
 
 @wrap_objective(handle_batch=True)
 def L2(layer="input", constant=0, epsilon=1e-6):
   """L2 norm of layer. Generally used as penalty."""
-  return lambda T: tf.sqrt(epsilon + tf.reduce_sum((T(layer) - constant) ** 2))
+  return lambda T: tf.sqrt(epsilon + tf.reduce_sum(input_tensor=(T(layer) - constant) ** 2))
 
 
 def _tf_blur(x, w=3):
@@ -266,7 +266,7 @@ def _tf_blur(x, w=3):
     k_ch[ :,    :  ] = 0.5
     k_ch[1:-1, 1:-1] = 1.0
 
-  conv_k = lambda t: tf.nn.conv2d(t, k, [1, 1, 1, 1], "SAME")
+  conv_k = lambda t: tf.nn.conv2d(input=t, filters=k, strides=[1, 1, 1, 1], padding="SAME")
   return conv_k(x) / conv_k(tf.ones_like(x))
 
 
@@ -284,7 +284,7 @@ def blur_input_each_step():
   def inner(T):
     t_input = T("input")
     t_input_blurred = tf.stop_gradient(_tf_blur(t_input))
-    return 0.5*tf.reduce_sum((t_input - t_input_blurred)**2)
+    return 0.5*tf.reduce_sum(input_tensor=(t_input - t_input_blurred)**2)
   return inner
 
 @wrap_objective()
@@ -292,7 +292,7 @@ def blur_alpha_each_step():
   def inner(T):
     t_input = T("input")[..., 3:4]
     t_input_blurred = tf.stop_gradient(_tf_blur(t_input))
-    return 0.5*tf.reduce_sum((t_input - t_input_blurred)**2)
+    return 0.5*tf.reduce_sum(input_tensor=(t_input - t_input_blurred)**2)
   return inner
 
 
@@ -319,8 +319,8 @@ def channel_interpolate(layer1, n_channel1, layer2, n_channel2):
     weights = (np.arange(batch_n)/float(batch_n-1))
     S = 0
     for n in range(batch_n):
-      S += (1-weights[n]) * tf.reduce_mean(arr1[n])
-      S += weights[n] * tf.reduce_mean(arr2[n])
+      S += (1-weights[n]) * tf.reduce_mean(input_tensor=arr1[n])
+      S += weights[n] * tf.reduce_mean(input_tensor=arr2[n])
     return S
   return inner
 
@@ -351,7 +351,7 @@ def penalize_boundary_complexity(shp, w=20, mask=None, C=0.5):
     diffs = (blur-arr)**2
     diffs += 0.8*(arr-C)**2
 
-    return -tf.reduce_sum(diffs*mask_)
+    return -tf.reduce_sum(input_tensor=diffs*mask_)
   return inner
 
 
@@ -385,7 +385,7 @@ def alignment(layer, decay_ratio=2):
       for i in range(batch_n - d):
         a, b = i, i+d
         arr1, arr2 = arr[a], arr[b]
-        accum += tf.reduce_mean((arr1-arr2)**2) / decay_ratio**float(d)
+        accum += tf.reduce_mean(input_tensor=(arr1-arr2)**2) / decay_ratio**float(d)
     return -accum
   return inner
 
@@ -416,7 +416,7 @@ def diversity(layer):
     grams = tf.matmul(flattened, flattened, transpose_a=True)
     grams = tf.nn.l2_normalize(grams, axis=[1,2], epsilon=1e-10)
 
-    return sum([ sum([ tf.reduce_sum(grams[i]*grams[j])
+    return sum([ sum([ tf.reduce_sum(input_tensor=grams[i]*grams[j])
                       for j in range(batch_n) if j != i])
                 for i in range(batch_n)]) / batch_n
   return inner
@@ -431,7 +431,7 @@ def input_diff(orig_img):
   """
   def inner(T):
     diff = T("input") - orig_img
-    return tf.sqrt(tf.reduce_mean(diff**2))
+    return tf.sqrt(tf.reduce_mean(input_tensor=diff**2))
   return inner
 
 
@@ -454,7 +454,7 @@ def class_logit(layer, label, batch=None):
     else:
       class_n = T("labels").index(label)
     logits = T(layer)
-    logit = tf.reduce_sum(logits[:, class_n])
+    logit = tf.reduce_sum(input_tensor=logits[:, class_n])
     return logit
   return inner
 

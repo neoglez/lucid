@@ -60,7 +60,7 @@ def lowres_tensor(shape, underlying_shape, offset=None, sd=None):
 
         # Actually apply offset by padding and then croping off the excess.
         padding = [(pad, 0) for pad in offset]
-        t = tf.pad(t, padding, "SYMMETRIC")
+        t = tf.pad(tensor=t, paddings=padding, mode="SYMMETRIC")
         begin = len(shape) * [0]
         t = tf.slice(t, begin, shape)
     return t

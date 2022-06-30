@@ -22,8 +22,8 @@ def dot_compare(layer, batch=1, cossim_pow=0):
   def inner(T):
     acts1 = T(layer)[0]
     acts2 = T(layer)[batch]
-    dot = tf.reduce_sum(acts1 * acts2)
-    mag = tf.sqrt(tf.reduce_sum(acts2**2))
+    dot = tf.reduce_sum(input_tensor=acts1 * acts2)
+    mag = tf.sqrt(tf.reduce_sum(input_tensor=acts2**2))
     cossim = dot / (1e-6 + mag)
     cossim = tf.maximum(0.1, cossim)
     return dot * cossim ** cossim_pow
@@ -42,7 +42,7 @@ def caricature(img, model, layer, n_steps=512, cossim_pow=0.0, verbose=True):
   else:
     raise TypeError("layer must be str, tuple or list")
 
-  with tf.Graph().as_default(), tf.Session() as sess:
+  with tf.Graph().as_default(), tf.compat.v1.Session() as sess:
     img = resize(img, model.image_shape[:2])
 
     objective = objectives.Objective.sum([
@@ -50,7 +50,7 @@ def caricature(img, model, layer, n_steps=512, cossim_pow=0.0, verbose=True):
         for i, layer in enumerate(layers)
     ])
 
-    t_input = tf.placeholder(tf.float32, img.shape)
+    t_input = tf.compat.v1.placeholder(tf.float32, img.shape)
     param_f = param.image(img.shape[0], decorrelate=True, fft=True, alpha=False, batch=len(layers))
     param_f = tf.concat([t_input[None], param_f], 0)
 
@@ -59,7 +59,7 @@ def caricature(img, model, layer, n_steps=512, cossim_pow=0.0, verbose=True):
     T = render.make_vis_T(model, objective, param_f, transforms=transforms)
     loss, vis_op, t_image = T("loss"), T("vis_op"), T("input")
 
-    tf.global_variables_initializer().run()
+    tf.compat.v1.global_variables_initializer().run()
     for i in range(n_steps): _ = sess.run([vis_op], {t_input: img})
 
     result = t_image.eval(feed_dict={t_input: img})

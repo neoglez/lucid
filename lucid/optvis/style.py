@@ -4,22 +4,22 @@ import tensorflow as tf
 
 
 def gram_style(a):
-  with tf.name_scope('gram'):
+  with tf.compat.v1.name_scope('gram'):
     chn = int(a.shape[-1])
     a = tf.reshape(a, [-1, chn])
-    n = tf.shape(a)[0]
+    n = tf.shape(input=a)[0]
     gram = tf.matmul(a, a, transpose_a=True)
     return gram / tf.cast(n, tf.float32)
 
 
 def mean_l1_loss(g1, g2):
-  with tf.name_scope('mean_l1_loss'):
-    return tf.reduce_mean(tf.abs(g1-g2))
+  with tf.compat.v1.name_scope('mean_l1_loss'):
+    return tf.reduce_mean(input_tensor=tf.abs(g1-g2))
 
 
 def mean_l2_loss(g1, g2):
-  with tf.name_scope('mean_l2_loss'):
-    return tf.sqrt(tf.reduce_mean(tf.square(g1 - g2)))
+  with tf.compat.v1.name_scope('mean_l2_loss'):
+    return tf.sqrt(tf.reduce_mean(input_tensor=tf.square(g1 - g2)))
 
 
 class StyleLoss(object):
@@ -84,7 +84,7 @@ class StyleLoss(object):
                tensors evaluate to activation values of style image...}
       style_loss.set_style(feeds)  # this must be called after 'init_op.run()'
     """
-    sess = tf.get_default_session()
+    sess = tf.compat.v1.get_default_session()
     computed = sess.run(self.input_grams, input_feeds)
     for v, g in zip(self.target_vars, computed):
       v.load(g)

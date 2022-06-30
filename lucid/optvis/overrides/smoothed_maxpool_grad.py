@@ -12,13 +12,13 @@ def make_smoothed_maxpool_grad(smooth_type="avg", epsilon=1e-2):
     op_kwargs = {}#dict(data_format=op.get_attr('data_format'))
 
     if smooth_type == "L2":
-      smooth_out = tf.nn.avg_pool(inp**2, *op_args, **op_kwargs)
-      smooth_out /= epsilon + tf.nn.avg_pool(tf.abs(inp), *op_args, **op_kwargs)
+      smooth_out = tf.nn.avg_pool2d(input=inp**2, **op_kwargs)
+      smooth_out /= epsilon + tf.nn.avg_pool2d(input=tf.abs(inp), **op_kwargs)
     elif smooth_type == "avg":
-      smooth_out = tf.nn.avg_pool(inp, *op_args)
+      smooth_out = tf.nn.avg_pool2d(input=inp)
     else:
       raise RuntimeError("Invalid smooth_type")
-    inp_smooth_grad = tf.gradients(smooth_out, [inp], grad)[0]
+    inp_smooth_grad = tf.gradients(ys=smooth_out, xs=[inp], grad_ys=grad)[0]
 
     return inp_smooth_grad
   return MaxPoolGrad

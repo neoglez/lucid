@@ -47,7 +47,7 @@ def _main(
     batch = len(channel_indices)
     w, h, _ = model.image_shape
 
-    with tf.Graph().as_default(), tf.Session() as sess:
+    with tf.Graph().as_default(), tf.compat.v1.Session() as sess:
 
         # Transformation Robustness
         transforms = transform.standard_transforms + [transform.crop_or_pad_to(w, h)]
@@ -82,13 +82,13 @@ def _main(
         obj = sum(objs)(T)
 
         if alpha:
-            obj *= 1.0 - tf.reduce_mean(image_t[..., -1])
+            obj *= 1.0 - tf.reduce_mean(input_tensor=image_t[..., -1])
             obj -= 0.1 * objectives.blur_alpha_each_step()(T)
 
         # Optimization
 
-        optimization = tf.train.AdamOptimizer(lr).minimize(-obj)
-        tf.global_variables_initializer().run()
+        optimization = tf.compat.v1.train.AdamOptimizer(lr).minimize(-obj)
+        tf.compat.v1.global_variables_initializer().run()
         losses = np.zeros((batch, n_steps))
         for step in range(n_steps):
             _, loss = sess.run([optimization, reported_obj])

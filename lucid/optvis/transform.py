@@ -32,10 +32,10 @@ from lucid.optvis import param
 
 def jitter(d, seed=None):
     def inner(t_image):
-        t_image = tf.convert_to_tensor(t_image, preferred_dtype=tf.float32)
-        t_shp = tf.shape(t_image)
+        t_image = tf.convert_to_tensor(value=t_image, dtype_hint=tf.float32)
+        t_shp = tf.shape(input=t_image)
         crop_shape = tf.concat([t_shp[:-3], t_shp[-3:-1] - d, t_shp[-1:]], 0)
-        crop = tf.random_crop(t_image, crop_shape, seed=seed)
+        crop = tf.image.random_crop(t_image, crop_shape, seed=seed)
         shp = t_image.get_shape().as_list()
         mid_shp_changed = [
             shp[-3] - d if shp[-3] is not None else None,
@@ -50,12 +50,12 @@ def jitter(d, seed=None):
 def pad(w, mode="REFLECT", constant_value=0.5):
     def inner(t_image):
         if constant_value == "uniform":
-            constant_value_ = tf.random_uniform([], 0, 1)
+            constant_value_ = tf.random.uniform([], 0, 1)
         else:
             constant_value_ = constant_value
         return tf.pad(
-            t_image,
-            [(0, 0), (w, w), (w, w), (0, 0)],
+            tensor=t_image,
+            paddings=[(0, 0), (w, w), (w, w), (0, 0)],
             mode=mode,
             constant_values=constant_value_,
         )
@@ -76,18 +76,18 @@ def pad(w, mode="REFLECT", constant_value=0.5):
 # 2D only version
 def random_scale(scales, seed=None):
     def inner(t):
-        t = tf.convert_to_tensor(t, preferred_dtype=tf.float32)
+        t = tf.convert_to_tensor(value=t, dtype_hint=tf.float32)
         scale = _rand_select(scales, seed=seed)
-        shp = tf.shape(t)
+        shp = tf.shape(input=t)
         scale_shape = tf.cast(scale * tf.cast(shp[-3:-1], "float32"), "int32")
-        return tf.image.resize_bilinear(t, scale_shape)
+        return tf.image.resize(t, scale_shape, method=tf.image.ResizeMethod.BILINEAR)
 
     return inner
 
 
 def random_rotate(angles, units="degrees", seed=None):
     def inner(t):
-        t = tf.convert_to_tensor(t, preferred_dtype=tf.float32)
+        t = tf.convert_to_tensor(value=t, dtype_hint=tf.float32)
         angle = _rand_select(angles, seed=seed)
         angle = _angle2rads(angle, units)
         return tf.contrib.image.rotate(t, angle)
@@ -104,7 +104,7 @@ def normalize_gradient(grad_scales=None):
 
     @tf.RegisterGradient(op_name)
     def _NormalizeGrad(op, grad):
-        grad_norm = tf.sqrt(tf.reduce_sum(grad ** 2, [1, 2, 3], keepdims=True))
+        grad_norm = tf.sqrt(tf.reduce_sum(input_tensor=grad ** 2, axis=[1, 2, 3], keepdims=True))
         if grad_scales is not None:
             grad *= grad_scales[:, None, None, None]
         return grad / grad_norm
@@ -138,7 +138,7 @@ def collapse_alpha_random(sd=0.5):
 
 def _rand_select(xs, seed=None):
     xs_list = list(xs)
-    rand_n = tf.random_uniform((), 0, len(xs_list), "int32", seed=seed)
+    rand_n = tf.random.uniform((), 0, len(xs_list), "int32", seed=seed)
     return tf.constant(xs_list)[rand_n]
 
 
@@ -157,7 +157,7 @@ def crop_or_pad_to(height, width):
     spatial shape of their inputs.
     """
     def inner(t_image):
-        return tf.image.resize_image_with_crop_or_pad(t_image, height, width)
+        return tf.image.resize_with_crop_or_pad(t_image, height, width)
     return inner
 
 

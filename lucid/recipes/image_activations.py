@@ -17,8 +17,8 @@ def image_activations(model, image, layer_names=None):
 
     resized_image = resize(image, model.image_shape[:2])
 
-    with tf.Graph().as_default() as graph, tf.Session() as sess:
-        image_t = tf.placeholder_with_default(resized_image, shape=model.image_shape)
+    with tf.Graph().as_default() as graph, tf.compat.v1.Session() as sess:
+        image_t = tf.compat.v1.placeholder_with_default(resized_image, shape=model.image_shape)
         model.import_graph(image_t, scope="import")
         layer_ts = {}
         for layer_name in layer_names:

@@ -34,7 +34,7 @@ def rand_fft_image(shape, sd=None, decay_power=1):
     for _ in range(b):
         freqs = rfft2d_freqs(h, w)
         fh, fw = freqs.shape
-        spectrum_var = sd * tf.random_normal([2, ch, fh, fw], dtype="float32")
+        spectrum_var = sd * tf.random.normal([2, ch, fh, fw], dtype="float32")
         spectrum = tf.complex(spectrum_var[0], spectrum_var[1])
         spertum_scale = 1.0 / np.maximum(freqs, 1.0 / max(h, w)) ** decay_power
         # Scale the spectrum by the square-root of the number of pixels
@@ -46,6 +46,6 @@ def rand_fft_image(shape, sd=None, decay_power=1):
         # in case of odd input dimension we cut off the additional pixel
         # we get from irfft2d length computation
         img = img[:ch, :h, :w]
-        img = tf.transpose(img, [1, 2, 0])
+        img = tf.transpose(a=img, perm=[1, 2, 0])
         imgs.append(img)
     return tf.stack(imgs) / 4.0

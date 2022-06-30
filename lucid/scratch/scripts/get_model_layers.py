@@ -49,10 +49,10 @@ def propose_layers(graphdef):
   
 def propose_layers_with_shapes(model):
   proposed_layers = propose_layers(model.graph_def)
-  with tf.Graph().as_default(), tf.Session() as sess:
-    t_input = tf.placeholder(tf.float32, [1] + model.image_shape)
+  with tf.Graph().as_default(), tf.compat.v1.Session() as sess:
+    t_input = tf.compat.v1.placeholder(tf.float32, [1] + model.image_shape)
     T = render.import_model(model, t_input, t_input)
-    t_shapes = [tf.shape(T(node.name))[1:] for node in proposed_layers]
+    t_shapes = [tf.shape(input=T(node.name))[1:] for node in proposed_layers]
     shapes = sess.run(t_shapes, {t_input: np.zeros([1] + model.image_shape)})
   return zip(proposed_layers, shapes)
   

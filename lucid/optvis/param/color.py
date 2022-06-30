@@ -42,7 +42,7 @@ def _linear_decorelate_color(t):
   t_flat = tf.reshape(t, [-1, 3])
   color_correlation_normalized = color_correlation_svd_sqrt / max_norm_svd_sqrt
   t_flat = tf.matmul(t_flat, color_correlation_normalized.T)
-  t = tf.reshape(t_flat, tf.shape(t))
+  t = tf.reshape(t_flat, tf.shape(input=t))
   return t
 
 

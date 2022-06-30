@@ -78,7 +78,7 @@ def gradient_override_map(override_dict):
   """Convenience wrapper for graph.gradient_override_map().
 
   This functions provides two conveniences over normal tensorflow gradient
-  overrides: it auomatically uses the default graph instead of you needing to
+  overrides: it automatically uses the default graph instead of you needing to
   find the graph, and it automatically
 
   Example:
@@ -89,7 +89,7 @@ def gradient_override_map(override_dict):
 
   Args:
     override_dict: A dictionary describing how to override the gradient.
-      keys: strings correponding to the op type that should have their gradient
+      keys: strings corresponding to the op type that should have their gradient
         overriden.
       values: functions or strings registered to gradient functions
 
@@ -100,7 +100,7 @@ def gradient_override_map(override_dict):
        override_dict_by_name[op_name] = grad_f
     else:
       override_dict_by_name[op_name] = register_to_random_name(grad_f)
-  with tf.get_default_graph().gradient_override_map(override_dict_by_name):
+  with tf.compat.v1.get_default_graph().gradient_override_map(override_dict_by_name):
     yield
 
 
@@ -130,7 +130,7 @@ def use_gradient(grad_f):
     def inner(*inputs):
 
       # TensorFlow only supports (as of writing) overriding the gradient of
-      # individual ops. In order to override the gardient of `f`, we need to
+      # individual ops. In order to override the gradient of `f`, we need to
       # somehow make it appear to be an individual TensorFlow op.
       #
       # Our solution is to create a PyFunc that mimics `f`.
@@ -154,7 +154,17 @@ def use_gradient(grad_f):
         state["out_value"] = out_value
 
       store_name = "store_" + f.__name__
-      store = tf.py_func(store_out, [out], (), stateful=True, name=store_name)
+      """ tf.py_func is deprecated in TF V2. Instead, there are two
+      options available in V2.
+      - tf.py_function takes a python function which manipulates tf eager
+      tensors instead of numpy arrays. It's easy to convert a tf eager tensor to
+      an ndarray (just call tensor.numpy()) but having access to eager tensors
+      means `tf.py_function`s can use accelerators such as GPUs as well as
+      being differentiable using a gradient tape.
+      - tf.numpy_function maintains the semantics of the deprecated tf.py_func
+      (it is not differentiable, and manipulates numpy arrays). It drops the
+      stateful argument making all functions stateful. """
+      store = tf.py_function(store_out, [out], (), name=store_name)
 
       # Next, we create the mock function, with an overriden gradient.
       # Note that we need to make sure store gets evaluated before the mock
@@ -167,7 +177,7 @@ def use_gradient(grad_f):
       with tf.control_dependencies([store]):
         with gradient_override_map({"PyFunc": grad_f_name}):
           mock_name = "mock_" + f.__name__
-          mock_out = tf.py_func(mock_f, inputs, out.dtype, stateful=True,
+          mock_out = tf.compat.v1.py_function(mock_f, inputs, out.dtype,
                                 name=mock_name)
           mock_out.set_shape(out.get_shape())
 

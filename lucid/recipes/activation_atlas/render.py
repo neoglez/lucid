@@ -33,7 +33,7 @@ def direction_neuron_S(layer_name, vec, batch=None, x=None, y=None, S=None):
 
     def inner(T):
         layer = T(layer_name)
-        shape = tf.shape(layer)
+        shape = tf.shape(input=layer)
         x_ = shape[1] // 2 if x is None else x
         y_ = shape[2] // 2 if y is None else y
         if batch is None:
@@ -44,7 +44,7 @@ def direction_neuron_S(layer_name, vec, batch=None, x=None, y=None, S=None):
         if S is not None:
             vec_ = tf.matmul(vec_[None], S)[0]
         # mag = tf.sqrt(tf.reduce_sum(acts**2))
-        dot = tf.reduce_mean(acts * vec_)
+        dot = tf.reduce_mean(input_tensor=acts * vec_)
         # cossim = dot/(1e-4 + mag)
         return dot
 
@@ -58,7 +58,7 @@ def direction_neuron_cossim_S(
 
     def inner(T):
         layer = T(layer_name)
-        shape = tf.shape(layer)
+        shape = tf.shape(input=layer)
         x_ = shape[1] // 2 if x is None else x
         y_ = shape[2] // 2 if y is None else y
         if batch is None:
@@ -68,8 +68,8 @@ def direction_neuron_cossim_S(
         vec_ = vec
         if S is not None:
             vec_ = tf.matmul(vec_[None], S)[0]
-        mag = tf.sqrt(tf.reduce_sum(acts ** 2))
-        dot = tf.reduce_mean(acts * vec_)
+        mag = tf.sqrt(tf.reduce_sum(input_tensor=acts ** 2))
+        dot = tf.reduce_mean(input_tensor=acts * vec_)
         cossim = dot / (1e-4 + mag)
         cossim = tf.maximum(0.1, cossim)
         return dot * cossim ** cossim_pow
@@ -143,14 +143,14 @@ def render_icons(
         # This is the tensorflow optimization process
 
         # print("attempt: ", attempt)
-        with tf.Graph().as_default(), tf.Session() as sess:
+        with tf.Graph().as_default(), tf.compat.v1.Session() as sess:
             learning_rate = 0.05
             losses = []
-            trainer = tf.train.AdamOptimizer(learning_rate)
+            trainer = tf.compat.v1.train.AdamOptimizer(learning_rate)
             T = render.make_vis_T(model, obj, param_f, trainer, transforms)
             vis_op, t_image = T("vis_op"), T("input")
             losses_ = [obj_part(T) for obj_part in obj_list]
-            tf.global_variables_initializer().run()
+            tf.compat.v1.global_variables_initializer().run()
             for i in range(n_steps):
                 loss, _ = sess.run([losses_, vis_op])
                 losses.append(loss)
